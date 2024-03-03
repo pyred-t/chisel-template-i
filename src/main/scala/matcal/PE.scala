@@ -26,8 +26,8 @@ class PE(inputWidth: Int, outputWidth: Int, accWidth: Int, df: Dataflow.Value)ex
     
     val cWidth = if (df == Dataflow.WS) inputWidth else accWidth
     // dual register
-    val c1 = Reg(SInt(cWidth.W))
-    val c2 = Reg(SInt(cWidth.W))
+    val c1 = RegInit(0.S(cWidth.W))
+    val c2 = RegInit(0.S(cWidth.W))
     
     // signal
     val prop = io.in_control.propagate
@@ -45,6 +45,7 @@ class PE(inputWidth: Int, outputWidth: Int, accWidth: Int, df: Dataflow.Value)ex
         // in_d => c1/c2 => out_c;
         // in_b/out_b as partial sum
         when(prop) {
+            // 对c1的读取必须在时钟周期结束前
             io.out_c := c1
             io.out_b := io.in_b + io.in_a * c2.asTypeOf(SInt(inputWidth.W)) // mac
             c1 := io.in_d
@@ -69,6 +70,12 @@ class PE(inputWidth: Int, outputWidth: Int, accWidth: Int, df: Dataflow.Value)ex
             c1 := c1 + io.in_a * io.in_b.asTypeOf(SInt(inputWidth.W))
             c2 := io.in_d
         }
-    }}
+    }}.otherwise{
+        // output 在任何情况下都需要赋值
+        c1 := c1
+        c2 := c2
+        io.out_b := 0.S
+        io.out_c := 0.S
+    }
 
 }

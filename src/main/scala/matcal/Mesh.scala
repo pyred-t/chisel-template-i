@@ -31,7 +31,7 @@ class Mesh(inputWidth: Int, outputWidth: Int, accWidth: Int, df: Dataflow.Value,
     // connect tile 'a'
     for (r <- 0 until meshRows) {
         mesh(r).foldLeft(io.in_a(r)){
-            case (in_a, tile) =>
+            case (in_a, tile) => // (leftsum, this_element) => next_leftsum
                 tile.io.in_a := ShiftRegister(in_a, tile_latency+1)
                 tile.io.out_a
         }
