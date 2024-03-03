@@ -25,6 +25,7 @@ class MeshTest extends AnyFlatSpec with ChiselScalatestTester with GivenWhenThen
         test(new Mesh(inwid, outwid, accwid, Dataflow.OS, 1, 1, 0, mRows, mCols, 0)){c => {
             val inmat = Seq.tabulate(3, 3) { (i, j) => Random.nextInt(10)}
             val kmat = Seq.tabulate(3, 2) { (i, j) => Random.nextInt(10)}
+            println(inmat, kmat)
             val kmatT = kmat.transpose
             val resmat = new Array[Int](3*2)
 
@@ -37,28 +38,30 @@ class MeshTest extends AnyFlatSpec with ChiselScalatestTester with GivenWhenThen
             for(i <- 0 until (3+2)) {
                 val invec = inmat.zipWithIndex.map{case (row, rowid) => getElem(row, i - rowid).S}
                 val kvec = kmatT.zipWithIndex.map{case (col, colid) => getElem(col, i-colid).S}
-                
-                c.io.in_a.foreach{x=>x.zipWithIndex.foreach{case(y, idx)=> y.poke(invec(idx))}} 
-                c.io.in_b.foreach{x=>x.zipWithIndex.foreach{case(y, idx)=> y.poke(kvec(idx))}}
+                println(i, "A ", invec, "B ", kvec)
+
+                c.io.in_a.zipWithIndex.foreach{case (x, idx) => x.foreach{y=>y.poke(invec(idx))}}
+                c.io.in_b.zipWithIndex.foreach{case (x, idx) => x.foreach{y=>y.poke(kvec(idx))}}
                 c.io.in_control.foreach{x=>x.foreach{y=>y.poke((new PEControl(accwid)).Lit(_.propagate -> true.B))}}
                 c.io.in_valid.foreach{x=>x.foreach{y=>y.poke(true.B)}}
                 c.clock.step()
             }
 
-            val res1 = c.io.out_c.map{_.map{_.peek()}}
-            println(res1)
-
             // c.io.in_control.foreach{x=>x.foreach{y=>y.propagate.poke(true.B)}}
             c.io.in_control.foreach{x=>x.foreach{y=>y.poke((new PEControl(accwid)).Lit(_.propagate -> false.B))}}
             c.io.in_valid.foreach{x=>x.foreach{y=>y.poke(true.B)}}
-
-            val res2 = c.io.out_c.map{_.map{_.peek()}}
-            println(res2)
-
+            
+            // 3 个周期后 propagate==false 到达 Mesh 列末端
+            c.clock.step()              // 1
+            println(c.io.out_c.peek())
+            c.clock.step()              // 2
+            println(c.io.out_c.peek())
             c.clock.step()
-
-            val res3 = c.io.out_c.map{_.map{_.peek()}}
-            println(res3)
+            println(c.io.out_c.peek())  // 3 resmat(2, 0)  resmat(2, 1)
+            c.clock.step()
+            println(c.io.out_c.peek())  // resmat(1, 0)  resmat(1, 1)
+            c.clock.step()
+            println(c.io.out_c.peek())  // resmat(0, 0)  resmat(0, 1)
 
             println(resmat.map{_.toString}.mkString(","))
         }}

@@ -41,7 +41,7 @@ class Mesh(inputWidth: Int, outputWidth: Int, accWidth: Int, df: Dataflow.Value,
     for (c <- 0 until meshColumns) {
         meshT(c).foldLeft((io.in_valid(c), io.in_b(c), io.in_d(c), io.in_control(c))){
             case ((valid, b, d, ctrl), tile) => {
-                tile.io.in_b := pipe(valid.head, b, tile_latency+1)
+                tile.io.in_b := pipe(valid.head, b, tile_latency+1)     // valid为vec，取其中一个元素(head)作为pipe的condition
                 tile.io.in_d := pipe(valid.head, d, tile_latency+1)
                 tile.io.in_control := pipe(valid.head, ctrl, tile_latency+1)
                 tile.io.in_valid := ShiftRegister(valid, tile_latency+1)

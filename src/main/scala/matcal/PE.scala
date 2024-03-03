@@ -70,12 +70,15 @@ class PE(inputWidth: Int, outputWidth: Int, accWidth: Int, df: Dataflow.Value)ex
             c1 := c1 + io.in_a * io.in_b.asTypeOf(SInt(inputWidth.W))
             c2 := io.in_d
         }
-    }}.otherwise{
+    }
+    printf(p" $name, INPUT=${io.in_a},  ${io.in_b}, OUT_C=${io.out_c} REG=$c1, $c2 \n")
+
+    }.otherwise{
         // output 在任何情况下都需要赋值
         c1 := c1
         c2 := c2
-        io.out_b := 0.S
-        io.out_c := 0.S
+        io.out_b := DontCare
+        io.out_c := DontCare
     }
 
 }
